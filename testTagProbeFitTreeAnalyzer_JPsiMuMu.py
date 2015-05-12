@@ -10,9 +10,7 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1) )
 
 process.TagProbeFitTreeAnalyzer = cms.EDAnalyzer("TagProbeFitTreeAnalyzer",
     # IO parameters:
-    #InputFileNames = cms.vstring("testTagProbeFitTreeProducer_JPsiMuMu.root"),
-    #InputFileNames = cms.vstring("/afs/cern.ch/work/l/lecriste/TnP/recipe_740/CMSSW_7_4_0/src/MuonAnalysis/TagAndProbe/test/zmumu/tnpJpsi_MC.root"),
-    InputFileNames = cms.vstring("/afs/cern.ch/work/l/lecriste/TnP/recipe_740/CMSSW_7_4_0/src/MuonAnalysis/TagAndProbe/test/jpsi/tnpJpsi_MC.root"),
+    InputFileNames = cms.vstring("/home/sharmam/CMSSW_7_4_0/src/MuonAnalysis/TagAndProbe/test/jpsi/tnpJpsi_MC.root"),
     #InputDirectoryName = cms.string("MuonID"),
     InputDirectoryName = cms.string("tpTree"),
     InputTreeName = cms.string("fitter_tree"),
