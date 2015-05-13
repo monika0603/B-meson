@@ -33,9 +33,9 @@ elif "CMSSW_7_4_" in os.environ['CMSSW_VERSION']:
     process.GlobalTag.globaltag = cms.string('MCRUN2_74_V7')
     process.source.fileNames = [
         # J/psi->mumu
-        '/store/relval/CMSSW_7_4_0/RelValJpsiMuMu_Pt-15/GEN-SIM-RECO/MCRUN2_74_V7D_pxBest_gs7115-v1/00000/94035014-04E7-E411-92CB-0025905A60BE.root',
-        '/store/relval/CMSSW_7_4_0/RelValJpsiMuMu_Pt-15/GEN-SIM-RECO/MCRUN2_74_V7D_pxBest_gs7115-v1/00000/9C6BFC1F-04E7-E411-8EF6-0025905B85F6.root',
-        '/store/relval/CMSSW_7_4_0/RelValJpsiMuMu_Pt-15/GEN-SIM-RECO/MCRUN2_74_V7D_pxBest_gs7115-v1/00000/A48EAA0F-04E7-E411-A585-002618943949.root',
+        '/store/mc/Summer12_DR53X/BsToJPsiPhi_2K2MuPtEtaFilter_8TeV-pythia6-evtgen/AODSIM/PU_S10_START53_V7A-v1/0000/00D1C264-FFD8-E111-B615-00215E21DC90.root',
+        '/store/mc/Summer12_DR53X/BsToJPsiPhi_2K2MuPtEtaFilter_8TeV-pythia6-evtgen/AODSIM/PU_S10_START53_V7A-v1/0000/02017A5B-F2D8-E111-9A7C-00215E21DE7C.root',
+        '/store/mc/Summer12_DR53X/BsToJPsiPhi_2K2MuPtEtaFilter_8TeV-pythia6-evtgen/AODSIM/PU_S10_START53_V7A-v1/0000/02494ACE-FDD8-E111-98C3-00215E20417E.root',
     ]
 else: raise RuntimeError, "Unknown CMSSW version %s" % os.environ['CMSSW_VERSION']
 
