@@ -3,7 +3,7 @@ config = config()
 
 config.section_('General')
 config.General.requestName = 'TagAndProbeFirstAttempt'
-config.General.workArea = ''
+config.General.workArea = 'TnP'
 config.General.transferOutputs = True
 config.General.transferLogs = True
 
