@@ -14,7 +14,7 @@ process.TagProbeFitTreeAnalyzer = cms.EDAnalyzer("TagProbeFitTreeAnalyzer",
     #InputDirectoryName = cms.string("MuonID"),
     InputDirectoryName = cms.string("tpTree"),
     InputTreeName = cms.string("fitter_tree"),
-    OutputFileName = cms.string("testTagProbeFitTreeAnalyzer_JPsiMuMu.root"),
+    OutputFileName = cms.string("testTagProbeFitTreeAnalyzer_JPsiMuMu_FB.root"),
     #numbrer of CPUs to use for fitting
     NumCPU = cms.uint32(1),
     # specifies wether to save the RooWorkspace containing the data for each bin and
