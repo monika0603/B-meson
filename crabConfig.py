@@ -8,7 +8,7 @@ config.General.transferOutputs = True
 config.General.transferLogs = True
 
 config.section_('JobType')
-config.JobType.pluginName = 'PrivateMC'
+config.JobType.pluginName = 'Analysis'
 config.JobType.psetName = 'stepITagAndProbeTreeProducer_JPsiMuMu.py'
 config.JobType.outputFiles = ['tnpJpsi_MC.root']
 
