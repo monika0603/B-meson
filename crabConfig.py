@@ -13,7 +13,7 @@ config.JobType.psetName = 'stepITagAndProbeTreeProducer_JPsiMuMu.py'
 config.JobType.outputFiles = ['tnpJpsi_MC.root']
 
 config.section_('Data')
-config.Data.inputDataset = '/BsToJPsiPhi_2K2MuPtEtaFilter_8TeV-pythia6-evtgen/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM'
+config.Data.inputDataset = '/JpsiToMuMu_JPsiPt7WithFSR_13TeV-pythia6-evtgen/Phys14DR-AVE30BX50_tsg_PHYS14_ST_V1-v2/AODSIM'
 config.Data.inputDBS = 'global'
 config.Data.splitting = 'LumiBased'
 config.Data.unitsPerJob = 10
