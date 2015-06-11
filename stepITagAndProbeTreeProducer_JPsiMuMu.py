@@ -37,15 +37,13 @@ elif "CMSSW_5_2_" in os.environ['CMSSW_VERSION']:
 elif "CMSSW_7_4_" in os.environ['CMSSW_VERSION']:
     process.GlobalTag.globaltag = cms.string('MCRUN2_74_V7')
     process.source.fileNames = [
-                                #'/store/relval/CMSSW_7_4_0/RelValZMM_13/GEN-SIM-RECO/PU25ns_MCRUN2_74_V7_gs7115_puProd-v1/00000/0005AAE5-49E0-E411-BC50-0025905A6060.root',
-                                #'/store/relval/CMSSW_7_4_0/RelValZMM_13/GEN-SIM-RECO/PU25ns_MCRUN2_74_V7_gs7115_puProd-v1/00000/32776650-51E0-E411-8B6E-0025905A60B6.root',
-                                #'/store/relval/CMSSW_7_4_0/RelValZMM_13/GEN-SIM-RECO/PU25ns_MCRUN2_74_V7_gs7115_puProd-v1/00000/44DE1ADA-49E0-E411-9877-0026189437FD.root',
-                                #'/store/relval/CMSSW_7_4_0/RelValZMM_13/GEN-SIM-RECO/PU25ns_MCRUN2_74_V7_gs7115_puProd-v1/00000/58E0B454-51E0-E411-A51F-0025905A60B6.root',
-                                #'/store/relval/CMSSW_7_4_0/RelValZMM_13/GEN-SIM-RECO/PU25ns_MCRUN2_74_V7_gs7115_puProd-v1/00000/BAF703DF-49E0-E411-A3FE-0025905A48D8.root',
                                 # J/psi->mumu
-                                '/store/relval/CMSSW_7_4_0/RelValJpsiMuMu_Pt-15/GEN-SIM-RECO/MCRUN2_74_V7D_pxBest_gs7115-v1/00000/94035014-04E7-E411-92CB-0025905A60BE.root',
-                                '/store/relval/CMSSW_7_4_0/RelValJpsiMuMu_Pt-15/GEN-SIM-RECO/MCRUN2_74_V7D_pxBest_gs7115-v1/00000/9C6BFC1F-04E7-E411-8EF6-0025905B85F6.root',
-                                '/store/relval/CMSSW_7_4_0/RelValJpsiMuMu_Pt-15/GEN-SIM-RECO/MCRUN2_74_V7D_pxBest_gs7115-v1/00000/A48EAA0F-04E7-E411-A585-002618943949.root',
+                                #'/store/relval/CMSSW_7_4_0/RelValJpsiMuMu_Pt-15/GEN-SIM-RECO/MCRUN2_74_V7D_pxBest_gs7115-v1/00000/94035014-04E7-E411-92CB-0025905A60BE.root',
+                                #'/store/relval/CMSSW_7_4_0/RelValJpsiMuMu_Pt-15/GEN-SIM-RECO/MCRUN2_74_V7D_pxBest_gs7115-v1/00000/9C6BFC1F-04E7-E411-8EF6-0025905B85F6.root',
+                                #'/store/relval/CMSSW_7_4_0/RelValJpsiMuMu_Pt-15/GEN-SIM-RECO/MCRUN2_74_V7D_pxBest_gs7115-v1/00000/A48EAA0F-04E7-E411-A585-002618943949.root',
+                                '/store/mc/RunIISpring15DR74/JpsiToMuMu_JPsiPt7_13TeV-pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/60000/183C894F-C008-E511-AFB5-0025905A606A.root',
+                                '/store/mc/RunIISpring15DR74/JpsiToMuMu_JPsiPt7_13TeV-pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/60000/3615E328-D708-E511-B2F9-003048FFD752.root',
+                                '/store/mc/RunIISpring15DR74/JpsiToMuMu_JPsiPt7_13TeV-pythia8/AODSIM/Asympt25ns_MCRUN2_74_V9-v1/60000/561562A2-D708-E511-B06E-0025905B8576.root'
                                 ]
 else: raise RuntimeError, "Unknown CMSSW version %s" % os.environ['CMSSW_VERSION']
 
