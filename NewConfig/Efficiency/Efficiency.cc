@@ -69,7 +69,7 @@ void Efficiency()
     for (int evt=0; evt<n_entries; evt++) {
         if (evt%5000==0 || evt==n_entries-1) printf("processing %d/%d (%.2f%%).\n",evt,n_entries-1,(double)evt/(double)(n_entries-1)*100.);
         
-        if (evt > 100000) break;
+       // if (evt > 100000) break;
         
         root->GetEntry(evt);
         
