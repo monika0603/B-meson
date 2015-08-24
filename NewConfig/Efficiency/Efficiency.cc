@@ -34,8 +34,8 @@ void Efficiency()
 {
     TChain *root = new TChain("demo/root");
     
-    root->Add("/store/user/msharma/BuToJpsiK_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_BPlusMC/150823_011104/0000/*.root");
-    root->Add("/store/user/msharma/BuToJpsiK_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_BPlusMC/150823_011104/0001/*.root");
+    root->Add("/tmp/msharma/0000/*.root");
+   // root->Add("/store/user/msharma/BuToJpsiK_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/crab_BPlusMC/150823_011104/0001/*.root");
     
     int n_entries = root->GetEntries();
     printf("Going to process %d entries.\n",n_entries);
