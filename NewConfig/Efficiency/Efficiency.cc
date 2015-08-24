@@ -103,7 +103,8 @@ void Efficiency()
 
                 bool kplusAcc = (GenInfo->pt[idx_kp]>0.9 && fabs(GenInfo->eta[idx_kp])<2.4);
                 
-                if (muon1Acc && muon2Acc && kplusAcc && GenInfo->mass[idx_bp] >=5.16 && GenInfo->mass[idx_bp] <= 5.365){
+               // if (muon1Acc && muon2Acc && kplusAcc && GenInfo->mass[idx_bp] >=5.16 && GenInfo->mass[idx_bp] <= 5.365){
+                if (muon1Acc && muon2Acc && kplusAcc){
                     h_bppt_genLevel->Fill(GenInfo->pt[idx_bp]);
                     h_bpy_genLevel->Fill(v4_bp.Rapidity());
                 }
