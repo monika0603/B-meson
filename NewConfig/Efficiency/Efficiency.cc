@@ -114,7 +114,7 @@ void Efficiency()
     // Start of BInfo loop
     for (int bidx = 0; bidx < BInfo->size; bidx++) {
         
-       // if (!(BInfo->type[bidx] == 1)) continue; //Only B+
+        if (!(BInfo->type[bidx] == 1)) continue; //Only B+
         //-----------------------------------------------------------------
         int ujidx = BInfo->rfuj_index[bidx];
         int tk1idx = BInfo->rftk1_index[bidx];
@@ -157,18 +157,17 @@ void Efficiency()
             if (TrackInfo->chi2[tk2idx]/TrackInfo->ndf[tk2idx]>=5.) continue;
         }
         
-        bool kplusAcc = (TrackInfo->pt[tk1idx]>0.8 && fabs(TrackInfo->eta[tk1idx])<2.4);
+        bool kplusAcc = (TrackInfo->pt[tk1idx]>0.9 && fabs(TrackInfo->eta[tk1idx])<2.4);
         
         //-----------------------------------------------------------------
         // J/psi cut
-        // KFC: May need to consider an y dependent cut?
         if (fabs(BInfo->uj_mass[ujidx]-JPSI_MASS)>=0.150) continue;
         if (BInfo->uj_pt[ujidx]<=8.0) continue;
 
         //-----------------------------------------------------------------
         // Find the best pointing PV
         //
-        // KFC@20150713: keep the selecton code but PV is replaced with BS in the end.
+        // keep the selecton code but PV is replaced with BS in the end.
         
         TVector3 bvtx(BInfo->vtxX[bidx],BInfo->vtxY[bidx],BInfo->vtxZ[bidx]);
         TVector3 bvtx_err(BInfo->vtxXE[bidx],BInfo->vtxYE[bidx],BInfo->vtxZE[bidx]);
