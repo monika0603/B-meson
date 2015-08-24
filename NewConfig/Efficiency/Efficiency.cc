@@ -101,7 +101,7 @@ void Efficiency()
                                  (fabs(GenInfo->eta[idx_mu2])>1.3 && fabs(GenInfo->eta[idx_mu2])<2.2 && v4_mu2.P()>2.9) ||
                                  (fabs(GenInfo->eta[idx_mu2])>2.2 && fabs(GenInfo->eta[idx_mu2])<2.4 && GenInfo->pt[idx_mu2]>0.8));
 
-                bool kplusAcc = (GenInfo->pt[idx_kp]>0.8 && fabs(GenInfo->eta[idx_kp])<2.4);
+                bool kplusAcc = (GenInfo->pt[idx_kp]>0.9 && fabs(GenInfo->eta[idx_kp])<2.4);
                 
                 if (muon1Acc && muon2Acc && kplusAcc && GenInfo->mass[idx_bp] >=5.16 && GenInfo->mass[idx_bp] <= 5.365){
                     h_bppt_genLevel->Fill(GenInfo->pt[idx_bp]);
