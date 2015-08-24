@@ -63,13 +63,13 @@ void Efficiency()
     TH1D* h_bppt_genLevel = new TH1D("h_bppt_genLevel","generator B+ p_{T}",40,10.,100.);
     TH1D* h_bpy_genLevel = new TH1D("h_bpy_genLevel","generator B+ rapidity",40,-2.4,2.4);
     
-    TH1D* h_bppt_recoLevel = new TH1D("h_bppt_recoLevel","generator B+ p_{T}",40,10.,100.);
-    TH1D* h_bpy_recoLevel = new TH1D("h_bpy_recoLevel","generator B+ rapidity",40,-2.4,2.4);
+    TH1D* h_bppt_recoLevel = new TH1D("h_bppt_recoLevel","reco-level B+ p_{T}",40,10.,100.);
+    TH1D* h_bpy_recoLevel = new TH1D("h_bpy_recoLevel","reco-level B+ rapidity",40,-2.4,2.4);
     
     for (int evt=0; evt<n_entries; evt++) {
         if (evt%5000==0 || evt==n_entries-1) printf("processing %d/%d (%.2f%%).\n",evt,n_entries-1,(double)evt/(double)(n_entries-1)*100.);
         
-       // if (evt > 100000) break;
+        if (evt > 100000) break;
         
         root->GetEntry(evt);
         
@@ -103,8 +103,7 @@ void Efficiency()
 
                 bool kplusAcc = (GenInfo->pt[idx_kp]>0.9 && fabs(GenInfo->eta[idx_kp])<2.4);
                 
-               // if (muon1Acc && muon2Acc && kplusAcc && GenInfo->mass[idx_bp] >=5.16 && GenInfo->mass[idx_bp] <= 5.365){
-                if (muon1Acc && muon2Acc && kplusAcc){
+                if (muon1Acc && muon2Acc && kplusAcc && GenInfo->mass[idx_bp] >=5.16 && GenInfo->mass[idx_bp] <= 5.365){
                     h_bppt_genLevel->Fill(GenInfo->pt[idx_bp]);
                     h_bpy_genLevel->Fill(v4_bp.Rapidity());
                 }
@@ -124,14 +123,6 @@ void Efficiency()
         int mu2idx = BInfo->uj_rfmu2_index[ujidx];
         
         //-----------------------------------------------------------------
-        // Basic muon selections
-        if (MuonInfo->pt[mu1idx]<=3.) continue;
-        if (MuonInfo->pt[mu2idx]<=3.) continue;
-        if (fabs(MuonInfo->eta[mu1idx])>=2.4) continue;
-        if (fabs(MuonInfo->eta[mu2idx])>=2.4) continue;
-        if (!MuonInfo->SoftMuID[mu1idx]) continue;
-        if (!MuonInfo->SoftMuID[mu2idx]) continue;
-        
         TVector3 v3_muon1, v3_muon2;
         v3_muon1.SetPtEtaPhi(MuonInfo->pt[mu1idx],MuonInfo->eta[mu1idx],MuonInfo->phi[mu1idx]);
         v3_muon2.SetPtEtaPhi(MuonInfo->pt[mu2idx],MuonInfo->eta[mu2idx],MuonInfo->phi[mu2idx]);
@@ -142,6 +133,14 @@ void Efficiency()
         bool muon2Acc = ((fabs(MuonInfo->eta[mu2idx])<1.3 && MuonInfo->pt[mu2idx]>3.3) ||
                          (fabs(MuonInfo->eta[mu2idx])>1.3 && fabs(MuonInfo->eta[mu2idx])<2.2 && v3_muon2.Mag()>2.9) ||
                          (fabs(MuonInfo->eta[mu2idx])>2.2 && fabs(MuonInfo->eta[mu2idx])<2.4 && MuonInfo->pt[mu2idx]>0.8));
+        
+        // Basic muon selections
+        if (MuonInfo->pt[mu1idx]<=4.) continue;
+        if (MuonInfo->pt[mu2idx]<=4.) continue;
+        if (fabs(MuonInfo->eta[mu1idx])>=2.4) continue;
+        if (fabs(MuonInfo->eta[mu2idx])>=2.4) continue;
+        if (!MuonInfo->SoftMuID[mu1idx]) continue;
+        if (!MuonInfo->SoftMuID[mu2idx]) continue;
     
         //-----------------------------------------------------------------
         // Basic track selections
@@ -163,7 +162,7 @@ void Efficiency()
         //-----------------------------------------------------------------
         // J/psi cut
         if (fabs(BInfo->uj_mass[ujidx]-JPSI_MASS)>=0.150) continue;
-        if (BInfo->uj_pt[ujidx]<=6.0) continue;
+        if (BInfo->uj_pt[ujidx]<=8.0) continue;
 
         //-----------------------------------------------------------------
         // Find the best pointing PV
@@ -223,7 +222,6 @@ void Efficiency()
         
    } // end of evt loop
     
-    TCanvas *c1 = canvasDressing("c1");
     TH1D *h_bp_pt_eff = (TH1D*)h_bppt_recoLevel->Clone("h_bp_pt_eff");
     h_bp_pt_eff->Divide(h_bppt_genLevel);
     for (int i=1; i<=h_bp_pt_eff->GetNbinsX(); i++) {
