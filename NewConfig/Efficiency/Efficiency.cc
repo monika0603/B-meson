@@ -6,6 +6,7 @@
 #include <TChain.h>
 #include <TTree.h>
 #include <TH1D.h>
+#include <TH2D.h>
 #include <TFile.h>
 #include <TMath.h>
 #include <TLorentzVector.h>
@@ -66,6 +67,9 @@ void Efficiency()
     TH1D* h_bppt_recoLevel = new TH1D("h_bppt_recoLevel","reco-level B+ p_{T}",40,10.,100.);
     TH1D* h_bpy_recoLevel = new TH1D("h_bpy_recoLevel","reco-level B+ rapidity",40,-2.4,2.4);
     
+    TH2D* h_bpt_y_genlevel = new TH2D("h_bpt_y_genlevel", "pT vs y", 80,-2.4,2.4, 80,10.,100.);
+    TH2D* h_bpt_y_recolevel = new TH2D("h_bpt_y_recolevel", "pT vs y", 80,-2.4,2.4, 80,10.,100.);
+    
     for (int evt=0; evt<n_entries; evt++) {
         if (evt%5000==0 || evt==n_entries-1) printf("processing %d/%d (%.2f%%).\n",evt,n_entries-1,(double)evt/(double)(n_entries-1)*100.);
         
@@ -106,6 +110,7 @@ void Efficiency()
                 if (muon1Acc && muon2Acc && kplusAcc && GenInfo->mass[idx_bp] >=5.16 && GenInfo->mass[idx_bp] <= 5.365){
                     h_bppt_genLevel->Fill(GenInfo->pt[idx_bp]);
                     h_bpy_genLevel->Fill(v4_bp.Rapidity());
+                    h_bpt_y_genlevel->Fill(v4_bp.Rapidity(), GenInfo->pt[idx_bp]);
                 }
 
             }
@@ -133,6 +138,7 @@ void Efficiency()
         bool muon2Acc = ((fabs(MuonInfo->eta[mu2idx])<1.3 && MuonInfo->pt[mu2idx]>3.3) ||
                          (fabs(MuonInfo->eta[mu2idx])>1.3 && fabs(MuonInfo->eta[mu2idx])<2.2 && v3_muon2.Mag()>2.9) ||
                          (fabs(MuonInfo->eta[mu2idx])>2.2 && fabs(MuonInfo->eta[mu2idx])<2.4 && MuonInfo->pt[mu2idx]>0.8));
+        bool kplusAcc =  false;
         
         // Basic muon selections
         if (MuonInfo->pt[mu1idx]<=4.) continue;
@@ -144,10 +150,11 @@ void Efficiency()
     
         //-----------------------------------------------------------------
         // Basic track selections
-        if (BInfo->type[bidx]==1 || BInfo->type[bidx]==2) { // k, pi
+        if (BInfo->type[bidx]==1) { // k, pi
             if (TrackInfo->pt[tk1idx]<=1.0) continue;
             if (fabs(TrackInfo->eta[tk1idx])>=2.5) continue;
             if (TrackInfo->chi2[tk1idx]/TrackInfo->ndf[tk1idx]>=5.) continue;
+            kplusAcc = (TrackInfo->pt[tk1idx]>0.9 && fabs(TrackInfo->eta[tk1idx])<2.4);
         }else { // others (2 tracks)
             if (TrackInfo->pt[tk1idx]<=0.7) continue;
             if (TrackInfo->pt[tk2idx]<=0.7) continue;
@@ -156,8 +163,6 @@ void Efficiency()
             if (TrackInfo->chi2[tk1idx]/TrackInfo->ndf[tk1idx]>=5.) continue;
             if (TrackInfo->chi2[tk2idx]/TrackInfo->ndf[tk2idx]>=5.) continue;
         }
-        
-        bool kplusAcc = (TrackInfo->pt[tk1idx]>0.9 && fabs(TrackInfo->eta[tk1idx])<2.4);
         
         //-----------------------------------------------------------------
         // J/psi cut
@@ -195,7 +200,7 @@ void Efficiency()
         
         // KFC@20150713: Don't do PV finding for now. Always use the beamspot according to the agreement
         PV = BS; PV_err = BS_err;
-        
+    
         TLorentzVector v4_uj;
         v4_uj.SetPtEtaPhiM(BInfo->uj_pt[ujidx],BInfo->uj_eta[ujidx],BInfo->uj_phi[ujidx],BInfo->uj_mass[ujidx]);
         
@@ -212,10 +217,25 @@ void Efficiency()
         }
         
         //-----------------------------------------------------------------
+        // Other quality cuts for B+
+        double cosalpha2d = bmom.XYvector()*(bvtx-PV).XYvector()/(bmom.Perp()*(bvtx-PV).Perp());
+        if (cosalpha2d<=0.8) continue;
+        
+        double lxy = (bvtx-PV).Perp();
+        double errxy = sqrt(bvtx_err.Perp2()+PV_err.Perp2());
+        double lxy_significance = lxy/errxy;
+        
+     //   if (lxy_significance <=3.0) continue;
+        
+        double vtxprob = TMath::Prob(BInfo->vtxchi2[bidx],BInfo->vtxdof[bidx]);
+     //   if (vtxprob<=0.1) continue;
+
+        //-----------------------------------------------------------------
         // Start to fill the B hadron information
         if (muon1Acc && muon2Acc && kplusAcc && BInfo->mass[bidx] >=5.16 && BInfo->mass[bidx] <= 5.365){
             h_bppt_recoLevel->Fill(BInfo->pt[bidx]);
             h_bpy_recoLevel->Fill(v4_b.Rapidity());
+            h_bpt_y_recolevel->Fill(v4_b.Rapidity(), BInfo->pt[bidx]);
         }
 
     }// End of BInfo loop
@@ -254,6 +274,14 @@ void Efficiency()
         double p = h_bp_y_eff->GetBinContent(i);
         double N = h_bpy_genLevel->GetBinContent(i);
         h_bp_y_eff->SetBinError(i,sqrt(p*(1.-p)/N)); // binominal error
+    }
+    
+    TH1D *h_bppt_y_eff = (TH1D*)h_bpt_y_recolevel->Clone("h_bppt_y_eff");
+    h_bppt_y_eff->Divide(h_bpt_y_genlevel);
+    for (int i=1; i<=h_bppt_y_eff->GetNbinsX(); i++) {
+        double p = h_bppt_y_eff->GetBinContent(i);
+        double N = h_bpy_genLevel->GetBinContent(i);
+        h_bppt_y_eff->SetBinError(i,sqrt(p*(1.-p)/N)); // binominal error
     }
     
     fout->Write();
