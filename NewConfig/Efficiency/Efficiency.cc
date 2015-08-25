@@ -61,14 +61,14 @@ void Efficiency()
     
     TFile *fout = new TFile("myloop_gen.root","recreate");
     
-    TH1D* h_bppt_genLevel = new TH1D("h_bppt_genLevel","generator B+ p_{T}",40,10.,100.);
-    TH1D* h_bpy_genLevel = new TH1D("h_bpy_genLevel","generator B+ rapidity",40,-2.4,2.4);
+    TH1D* h_bppt_genLevel = new TH1D("h_bppt_genLevel","generator B+ p_{T}",80,0.,100.);
+    TH1D* h_bpy_genLevel = new TH1D("h_bpy_genLevel","generator B+ rapidity",80,-2.4,2.4);
     
-    TH1D* h_bppt_recoLevel = new TH1D("h_bppt_recoLevel","reco-level B+ p_{T}",40,10.,100.);
-    TH1D* h_bpy_recoLevel = new TH1D("h_bpy_recoLevel","reco-level B+ rapidity",40,-2.4,2.4);
+    TH1D* h_bppt_recoLevel = new TH1D("h_bppt_recoLevel","reco-level B+ p_{T}",80,0.,100.);
+    TH1D* h_bpy_recoLevel = new TH1D("h_bpy_recoLevel","reco-level B+ rapidity",80,-2.4,2.4);
     
-    TH2D* h_bpt_y_genlevel = new TH2D("h_bpt_y_genlevel", "pT vs y", 80,-2.4,2.4, 80,10.,100.);
-    TH2D* h_bpt_y_recolevel = new TH2D("h_bpt_y_recolevel", "pT vs y", 80,-2.4,2.4, 80,10.,100.);
+    TH2D* h_bpt_y_genlevel = new TH2D("h_bpt_y_genlevel", "pT vs y", 80,-2.4,2.4, 100,0.,100.);
+    TH2D* h_bpt_y_recolevel = new TH2D("h_bpt_y_recolevel", "pT vs y", 80,-2.4,2.4, 100,0.,100.);
     
     for (int evt=0; evt<n_entries; evt++) {
         if (evt%5000==0 || evt==n_entries-1) printf("processing %d/%d (%.2f%%).\n",evt,n_entries-1,(double)evt/(double)(n_entries-1)*100.);
@@ -132,17 +132,17 @@ void Efficiency()
         v3_muon1.SetPtEtaPhi(MuonInfo->pt[mu1idx],MuonInfo->eta[mu1idx],MuonInfo->phi[mu1idx]);
         v3_muon2.SetPtEtaPhi(MuonInfo->pt[mu2idx],MuonInfo->eta[mu2idx],MuonInfo->phi[mu2idx]);
         
-        bool muon1Acc = ((fabs(MuonInfo->eta[mu1idx])<1.3 && MuonInfo->pt[mu1idx]>3.3) ||
+       /* bool muon1Acc = ((fabs(MuonInfo->eta[mu1idx])<1.3 && MuonInfo->pt[mu1idx]>3.3) ||
                          (fabs(MuonInfo->eta[mu1idx])>1.3 && fabs(MuonInfo->eta[mu1idx])<2.2 && v3_muon1.Mag()>2.9) ||
                          (fabs(MuonInfo->eta[mu1idx])>2.2 && fabs(MuonInfo->eta[mu1idx])<2.4 && MuonInfo->pt[mu1idx]>0.8));
         bool muon2Acc = ((fabs(MuonInfo->eta[mu2idx])<1.3 && MuonInfo->pt[mu2idx]>3.3) ||
                          (fabs(MuonInfo->eta[mu2idx])>1.3 && fabs(MuonInfo->eta[mu2idx])<2.2 && v3_muon2.Mag()>2.9) ||
                          (fabs(MuonInfo->eta[mu2idx])>2.2 && fabs(MuonInfo->eta[mu2idx])<2.4 && MuonInfo->pt[mu2idx]>0.8));
-        bool kplusAcc =  false;
+        bool kplusAcc =  false;*/
         
         // Basic muon selections
-        if (MuonInfo->pt[mu1idx]<=4.) continue;
-        if (MuonInfo->pt[mu2idx]<=4.) continue;
+        if (MuonInfo->pt[mu1idx]<=2.8) continue;
+        if (MuonInfo->pt[mu2idx]<=2.8) continue;
         if (fabs(MuonInfo->eta[mu1idx])>=2.4) continue;
         if (fabs(MuonInfo->eta[mu2idx])>=2.4) continue;
         if (!MuonInfo->SoftMuID[mu1idx]) continue;
@@ -151,10 +151,10 @@ void Efficiency()
         //-----------------------------------------------------------------
         // Basic track selections
         if (BInfo->type[bidx]==1) { // k, pi
-            if (TrackInfo->pt[tk1idx]<=1.0) continue;
+            if (TrackInfo->pt[tk1idx]<=0.8) continue;
             if (fabs(TrackInfo->eta[tk1idx])>=2.5) continue;
             if (TrackInfo->chi2[tk1idx]/TrackInfo->ndf[tk1idx]>=5.) continue;
-            kplusAcc = (TrackInfo->pt[tk1idx]>0.9 && fabs(TrackInfo->eta[tk1idx])<2.4);
+          //  kplusAcc = (TrackInfo->pt[tk1idx]>0.9 && fabs(TrackInfo->eta[tk1idx])<2.4);
         }else { // others (2 tracks)
             if (TrackInfo->pt[tk1idx]<=0.7) continue;
             if (TrackInfo->pt[tk2idx]<=0.7) continue;
@@ -167,7 +167,7 @@ void Efficiency()
         //-----------------------------------------------------------------
         // J/psi cut
         if (fabs(BInfo->uj_mass[ujidx]-JPSI_MASS)>=0.150) continue;
-        if (BInfo->uj_pt[ujidx]<=8.0) continue;
+        if (BInfo->uj_pt[ujidx]<=5.6) continue;
 
         //-----------------------------------------------------------------
         // Find the best pointing PV
@@ -219,7 +219,7 @@ void Efficiency()
         //-----------------------------------------------------------------
         // Other quality cuts for B+
         double cosalpha2d = bmom.XYvector()*(bvtx-PV).XYvector()/(bmom.Perp()*(bvtx-PV).Perp());
-        if (cosalpha2d<=0.8) continue;
+        if (cosalpha2d<=0.99) continue;
         
         double lxy = (bvtx-PV).Perp();
         double errxy = sqrt(bvtx_err.Perp2()+PV_err.Perp2());
@@ -232,7 +232,7 @@ void Efficiency()
 
         //-----------------------------------------------------------------
         // Start to fill the B hadron information
-        if (muon1Acc && muon2Acc && kplusAcc && BInfo->mass[bidx] >=5.16 && BInfo->mass[bidx] <= 5.365){
+        if (BInfo->mass[bidx] >=5.16 && BInfo->mass[bidx] <= 5.365){
             h_bppt_recoLevel->Fill(BInfo->pt[bidx]);
             h_bpy_recoLevel->Fill(v4_b.Rapidity());
             h_bpt_y_recolevel->Fill(v4_b.Rapidity(), BInfo->pt[bidx]);
