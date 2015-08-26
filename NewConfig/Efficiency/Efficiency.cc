@@ -59,16 +59,22 @@ void Efficiency()
     TrackInfo->setbranchadd(root);
     BInfo->setbranchadd(root);
     
-    TFile *fout = new TFile("myloop_gen.root","recreate");
+    TFile *fout = new TFile("efficiency.root","recreate");
     
-    TH1D* h_bppt_genLevel = new TH1D("h_bppt_genLevel","generator B+ p_{T}",80,0.,100.);
-    TH1D* h_bpy_genLevel = new TH1D("h_bpy_genLevel","generator B+ rapidity",80,-2.4,2.4);
+    TH1D* h_bppt_genLevel = new TH1D("h_bppt_genLevel","generator B+ p_{T}",40,10.,100.);
+    TH1D* h_bpy_genLevel = new TH1D("h_bpy_genLevel","generator B+ rapidity",40,-2.4,2.4);
     
-    TH1D* h_bppt_recoLevel = new TH1D("h_bppt_recoLevel","reco-level B+ p_{T}",80,0.,100.);
-    TH1D* h_bpy_recoLevel = new TH1D("h_bpy_recoLevel","reco-level B+ rapidity",80,-2.4,2.4);
+    TH1D* h_bppt_recoLevel = new TH1D("h_bppt_recoLevel","reco-level B+ p_{T}",40,10.,100.);
+    TH1D* h_bpy_recoLevel = new TH1D("h_bpy_recoLevel","reco-level B+ rapidity",40,-2.4,2.4);
     
-    TH2D* h_bpt_y_genlevel = new TH2D("h_bpt_y_genlevel", "pT vs y", 80,-2.4,2.4, 100,0.,100.);
-    TH2D* h_bpt_y_recolevel = new TH2D("h_bpt_y_recolevel", "pT vs y", 80,-2.4,2.4, 100,0.,100.);
+    TH2D* h_bpt_y_genlevel = new TH2D("h_bpt_y_genlevel", "pT vs y", 40,-2.4,2.4, 40,10.,100.);
+    TH2D* h_bpt_y_recolevel = new TH2D("h_bpt_y_recolevel", "pT vs y", 40,-2.4,2.4, 40,10.,100.);
+    
+    TH1D* h_bpfilter_pt = new TH1D("h_bpfilter_pt","Filter denominator",40,10.,100.);
+    TH1D* h_bpfilter_y = new TH1D("h_bpfilter_y","Filter denominator",40,-2.4,2.4);
+    
+    TH1D* h_cosang_sig = new TH1D("h_cosang_sig", "Signal cosine alpha", 100, 0., 1.);
+    TH1D* h_cosang_bkg = new TH1D("h_cosang_bkg", "Background cosine alpha", 100, 0., 1.);
     
     for (int evt=0; evt<n_entries; evt++) {
         if (evt%5000==0 || evt==n_entries-1) printf("processing %d/%d (%.2f%%).\n",evt,n_entries-1,(double)evt/(double)(n_entries-1)*100.);
@@ -107,6 +113,16 @@ void Efficiency()
 
                 bool kplusAcc = (GenInfo->pt[idx_kp]>0.9 && fabs(GenInfo->eta[idx_kp])<2.4);
                 
+                bool muon1Filter = fabs(GenInfo->eta[idx_mu1])<2.4 && GenInfo->pt[idx_mu1]>2.8;
+                bool muon2Filter = fabs(GenInfo->eta[idx_mu2])<2.4 && GenInfo->pt[idx_mu2]>2.8;
+                
+                bool bRapFilter = fabs(v4_bp.Rapidity())<2.4;
+                
+                if (muon1Filter && muon2Filter && bRapFilter) {
+                    h_bpfilter_pt->Fill(GenInfo->pt[idx_bp]);
+                    h_bpfilter_y->Fill(v4_bp.Rapidity());
+                }
+                
                 if (muon1Acc && muon2Acc && kplusAcc && GenInfo->mass[idx_bp] >=5.16 && GenInfo->mass[idx_bp] <= 5.365){
                     h_bppt_genLevel->Fill(GenInfo->pt[idx_bp]);
                     h_bpy_genLevel->Fill(v4_bp.Rapidity());
@@ -118,6 +134,28 @@ void Efficiency()
     
     // Start of BInfo loop
     for (int bidx = 0; bidx < BInfo->size; bidx++) {
+       
+        //---------------------------------------------------------------
+        // Cross check for cosine alpha of the background
+        if (!(BInfo->type[bidx] == 1)){
+         
+            TVector3 bvtx(BInfo->vtxX[bidx],BInfo->vtxY[bidx],BInfo->vtxZ[bidx]);
+            TVector3 bvtx_err(BInfo->vtxXE[bidx],BInfo->vtxYE[bidx],BInfo->vtxZE[bidx]);
+            TVector3 bmom(BInfo->px[bidx],BInfo->py[bidx],BInfo->pz[bidx]);
+            int vidx = -1;
+            double max_cosang = -1.;
+            for (int idx = 0; idx < VtxInfo->Size; idx++) {
+                TVector3 vtx(VtxInfo->x[idx],VtxInfo->y[idx],VtxInfo->z[idx]);
+                
+                double cosang = bmom.Dot(bvtx-vtx)/(bmom.Mag()*(bvtx-vtx).Mag());
+                if (cosang>max_cosang) {
+                    vidx = idx;
+                    max_cosang = cosang;
+                }
+            }
+            
+            h_cosang_bkg->Fill(max_cosang);
+        }
         
         if (!(BInfo->type[bidx] == 1)) continue; //Only B+
         //-----------------------------------------------------------------
@@ -132,17 +170,9 @@ void Efficiency()
         v3_muon1.SetPtEtaPhi(MuonInfo->pt[mu1idx],MuonInfo->eta[mu1idx],MuonInfo->phi[mu1idx]);
         v3_muon2.SetPtEtaPhi(MuonInfo->pt[mu2idx],MuonInfo->eta[mu2idx],MuonInfo->phi[mu2idx]);
         
-       /* bool muon1Acc = ((fabs(MuonInfo->eta[mu1idx])<1.3 && MuonInfo->pt[mu1idx]>3.3) ||
-                         (fabs(MuonInfo->eta[mu1idx])>1.3 && fabs(MuonInfo->eta[mu1idx])<2.2 && v3_muon1.Mag()>2.9) ||
-                         (fabs(MuonInfo->eta[mu1idx])>2.2 && fabs(MuonInfo->eta[mu1idx])<2.4 && MuonInfo->pt[mu1idx]>0.8));
-        bool muon2Acc = ((fabs(MuonInfo->eta[mu2idx])<1.3 && MuonInfo->pt[mu2idx]>3.3) ||
-                         (fabs(MuonInfo->eta[mu2idx])>1.3 && fabs(MuonInfo->eta[mu2idx])<2.2 && v3_muon2.Mag()>2.9) ||
-                         (fabs(MuonInfo->eta[mu2idx])>2.2 && fabs(MuonInfo->eta[mu2idx])<2.4 && MuonInfo->pt[mu2idx]>0.8));
-        bool kplusAcc =  false;*/
-        
         // Basic muon selections
-        if (MuonInfo->pt[mu1idx]<=2.8) continue;
-        if (MuonInfo->pt[mu2idx]<=2.8) continue;
+        if (MuonInfo->pt[mu1idx]<=4.0) continue;
+        if (MuonInfo->pt[mu2idx]<=4.0) continue;
         if (fabs(MuonInfo->eta[mu1idx])>=2.4) continue;
         if (fabs(MuonInfo->eta[mu2idx])>=2.4) continue;
         if (!MuonInfo->SoftMuID[mu1idx]) continue;
@@ -167,7 +197,7 @@ void Efficiency()
         //-----------------------------------------------------------------
         // J/psi cut
         if (fabs(BInfo->uj_mass[ujidx]-JPSI_MASS)>=0.150) continue;
-        if (BInfo->uj_pt[ujidx]<=5.6) continue;
+        if (BInfo->uj_pt[ujidx]<=8.0) continue;
 
         //-----------------------------------------------------------------
         // Find the best pointing PV
@@ -188,6 +218,9 @@ void Efficiency()
                 max_cosang = cosang;
             }
         }
+        
+        h_cosang_sig->Fill(max_cosang);
+        
         if (vidx==-1) {
             printf("Error: no PV found. Run: %d, Event: %d.\n",EvtInfo->RunNo,EvtInfo->EvtNo);
             continue;
@@ -198,7 +231,7 @@ void Efficiency()
         TVector3 PV(VtxInfo->x[vidx],VtxInfo->y[vidx],VtxInfo->z[vidx]);
         TVector3 PV_err(VtxInfo->xE[vidx],VtxInfo->yE[vidx],VtxInfo->zE[vidx]);
         
-        // KFC@20150713: Don't do PV finding for now. Always use the beamspot according to the agreement
+        // Always use the beamspot
         PV = BS; PV_err = BS_err;
     
         TLorentzVector v4_uj;
@@ -219,20 +252,22 @@ void Efficiency()
         //-----------------------------------------------------------------
         // Other quality cuts for B+
         double cosalpha2d = bmom.XYvector()*(bvtx-PV).XYvector()/(bmom.Perp()*(bvtx-PV).Perp());
-        if (cosalpha2d<=0.99) continue;
+       // if (cosalpha2d<=0.99) continue;
+        //cout<<bidx<<'\t'<<cosalpha2d<<'\t'<<max_cosang<<endl;
+        if (max_cosang<=0.99) continue;
         
         double lxy = (bvtx-PV).Perp();
         double errxy = sqrt(bvtx_err.Perp2()+PV_err.Perp2());
         double lxy_significance = lxy/errxy;
         
-     //   if (lxy_significance <=3.0) continue;
+       // if (lxy_significance <=3.0) continue;
         
         double vtxprob = TMath::Prob(BInfo->vtxchi2[bidx],BInfo->vtxdof[bidx]);
-     //   if (vtxprob<=0.1) continue;
+       // if (vtxprob<=0.1) continue;
 
         //-----------------------------------------------------------------
         // Start to fill the B hadron information
-        if (BInfo->mass[bidx] >=5.16 && BInfo->mass[bidx] <= 5.365){
+        if (BInfo->mass[bidx] >=5.16 && BInfo->mass[bidx] <= 5.365 && fabs(v4_b.Rapidity())<2.4){
             h_bppt_recoLevel->Fill(BInfo->pt[bidx]);
             h_bpy_recoLevel->Fill(v4_b.Rapidity());
             h_bpt_y_recolevel->Fill(v4_b.Rapidity(), BInfo->pt[bidx]);
@@ -282,6 +317,17 @@ void Efficiency()
         double p = h_bppt_y_eff->GetBinContent(i);
         double N = h_bpy_genLevel->GetBinContent(i);
         h_bppt_y_eff->SetBinError(i,sqrt(p*(1.-p)/N)); // binominal error
+    }
+    
+    //-------------------------------------------------------------
+    // Taking the pre-filter into account in the official MC sample
+    
+    TH1D *h_bp_pt_effPrime = (TH1D*)h_bppt_recoLevel->Clone("h_bp_pt_effPrime");
+    h_bp_pt_effPrime->Divide(h_bpfilter_pt);
+    for (int i=1; i<=h_bp_pt_effPrime->GetNbinsX(); i++) {
+        double p = h_bp_pt_effPrime->GetBinContent(i);
+        double N = h_bpfilter_pt->GetBinContent(i);
+        h_bp_pt_effPrime->SetBinError(i,sqrt(p*(1.-p)/N)); // binominal error
     }
     
     fout->Write();
