@@ -76,6 +76,8 @@ void Efficiency()
     TH1D* h_cosang_sig = new TH1D("h_cosang_sig", "Signal cosine alpha", 100, 0., 1.);
     TH1D* h_cosang_bkg = new TH1D("h_cosang_bkg", "Background cosine alpha", 100, 0., 1.);
     
+    TH1D* h_Bmass = new TH1D("h_Bmass", "J/#psi K+ inavriant mass distribution", 100, 5.0, 6.0);
+    
     for (int evt=0; evt<n_entries; evt++) {
         if (evt%5000==0 || evt==n_entries-1) printf("processing %d/%d (%.2f%%).\n",evt,n_entries-1,(double)evt/(double)(n_entries-1)*100.);
         
@@ -254,7 +256,7 @@ void Efficiency()
         double cosalpha2d = bmom.XYvector()*(bvtx-PV).XYvector()/(bmom.Perp()*(bvtx-PV).Perp());
        // if (cosalpha2d<=0.99) continue;
         //cout<<bidx<<'\t'<<cosalpha2d<<'\t'<<max_cosang<<endl;
-        if (max_cosang<=0.99) continue;
+      //  if (max_cosang<=0.99) continue;
         
         double lxy = (bvtx-PV).Perp();
         double errxy = sqrt(bvtx_err.Perp2()+PV_err.Perp2());
@@ -267,6 +269,8 @@ void Efficiency()
 
         //-----------------------------------------------------------------
         // Start to fill the B hadron information
+        h_Bmass->Fill(BInfo->mass[bidx]);
+        
         if (BInfo->mass[bidx] >=5.16 && BInfo->mass[bidx] <= 5.365 && fabs(v4_b.Rapidity())<2.4){
             h_bppt_recoLevel->Fill(BInfo->pt[bidx]);
             h_bpy_recoLevel->Fill(v4_b.Rapidity());
