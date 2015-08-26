@@ -254,7 +254,7 @@ void Efficiency()
         //-----------------------------------------------------------------
         // Other quality cuts for B+
         double cosalpha2d = bmom.XYvector()*(bvtx-PV).XYvector()/(bmom.Perp()*(bvtx-PV).Perp());
-       // if (cosalpha2d<=0.99) continue;
+        if (cosalpha2d<=0.99) continue;
         //cout<<bidx<<'\t'<<cosalpha2d<<'\t'<<max_cosang<<endl;
       //  if (max_cosang<=0.99) continue;
         
