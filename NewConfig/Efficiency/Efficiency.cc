@@ -31,6 +31,19 @@
 #define BC_MASS      6.2756
 #define LAMBDAB_MASS 5.6195
 
+//TH1D *binomialError(TH1D* num, TH1D* den);
+
+TH1D *binomialError(TH1D* num, TH1D* den)
+{
+    for (int i=1; i<=num->GetNbinsX(); i++) {
+        double p = num->GetBinContent(i);
+        double N = den->GetBinContent(i);
+        num->SetBinError(i,sqrt(p*(1.-p)/N)); // binominal error
+    }
+    
+    return num;
+}
+
 void Efficiency()
 {
     TChain *root = new TChain("demo/root");
@@ -73,20 +86,42 @@ void Efficiency()
     TH1D* h_bpfilter_pt = new TH1D("h_bpfilter_pt","Filter denominator",40,10.,100.);
     TH1D* h_bpfilter_y = new TH1D("h_bpfilter_y","Filter denominator",40,-2.4,2.4);
     
+    TH1D *h_bp_pt_effPrime_BE = new TH1D("h_bp_pt_effPrime_BE","Filter denominator",40,10.,100.);
+    
     TH1D* h_cosang_sig = new TH1D("h_cosang_sig", "Signal cosine alpha", 100, 0., 1.);
-    TH1D* h_cosang_bkg = new TH1D("h_cosang_bkg", "Background cosine alpha", 100, 0., 1.);
     
     TH1D* h_Bmass = new TH1D("h_Bmass", "J/#psi K+ inavriant mass distribution", 100, 5.0, 6.0);
+    TH1D* h_dR = new TH1D("h_dR", "Opening angle", 100, 0., 1.0);
     
     for (int evt=0; evt<n_entries; evt++) {
         if (evt%5000==0 || evt==n_entries-1) printf("processing %d/%d (%.2f%%).\n",evt,n_entries-1,(double)evt/(double)(n_entries-1)*100.);
         
-        if (evt > 100000) break;
+        if (evt > 200000) break;
         
         root->GetEntry(evt);
         
         // Look for indices of the whole decay tree
+        //-----------------------------------------------------------------
+        // Calculating dR
+        for (int idx = 0; idx < GenInfo->size; idx++) {
+            if (abs(GenInfo->pdgId[idx])==521) {
+                
+                int idx_bp   = idx;
+                TVector3 v3_bGen;
+                v3_bGen.SetPtEtaPhi(GenInfo->pt[idx_bp],GenInfo->eta[idx_bp],GenInfo->phi[idx_bp]);
     
+                for (int bidx = 0; bidx < BInfo->size; bidx++) {
+                    if (!(BInfo->type[bidx] == 1)) continue; //Only B+
+                    TVector3 v3_bReco;
+                    v3_bReco.SetPtEtaPhi(BInfo->pt[bidx],BInfo->eta[bidx],BInfo->phi[bidx]);
+                    
+                    double dR = v3_bGen.Angle(v3_bReco);
+                    h_dR->Fill(dR);
+                }
+            }
+        }
+        //-----------------------------------------------------------------
+        
         for (int idx = 0; idx < GenInfo->size; idx++) {
             
             if (abs(GenInfo->pdgId[idx])==521) { // B+ find
@@ -137,28 +172,6 @@ void Efficiency()
     // Start of BInfo loop
     for (int bidx = 0; bidx < BInfo->size; bidx++) {
        
-        //---------------------------------------------------------------
-        // Cross check for cosine alpha of the background
-        if (!(BInfo->type[bidx] == 1)){
-         
-            TVector3 bvtx(BInfo->vtxX[bidx],BInfo->vtxY[bidx],BInfo->vtxZ[bidx]);
-            TVector3 bvtx_err(BInfo->vtxXE[bidx],BInfo->vtxYE[bidx],BInfo->vtxZE[bidx]);
-            TVector3 bmom(BInfo->px[bidx],BInfo->py[bidx],BInfo->pz[bidx]);
-            int vidx = -1;
-            double max_cosang = -1.;
-            for (int idx = 0; idx < VtxInfo->Size; idx++) {
-                TVector3 vtx(VtxInfo->x[idx],VtxInfo->y[idx],VtxInfo->z[idx]);
-                
-                double cosang = bmom.Dot(bvtx-vtx)/(bmom.Mag()*(bvtx-vtx).Mag());
-                if (cosang>max_cosang) {
-                    vidx = idx;
-                    max_cosang = cosang;
-                }
-            }
-            
-            h_cosang_bkg->Fill(max_cosang);
-        }
-        
         if (!(BInfo->type[bidx] == 1)) continue; //Only B+
         //-----------------------------------------------------------------
         int ujidx = BInfo->rfuj_index[bidx];
@@ -186,7 +199,6 @@ void Efficiency()
             if (TrackInfo->pt[tk1idx]<=0.8) continue;
             if (fabs(TrackInfo->eta[tk1idx])>=2.5) continue;
             if (TrackInfo->chi2[tk1idx]/TrackInfo->ndf[tk1idx]>=5.) continue;
-          //  kplusAcc = (TrackInfo->pt[tk1idx]>0.9 && fabs(TrackInfo->eta[tk1idx])<2.4);
         }else { // others (2 tracks)
             if (TrackInfo->pt[tk1idx]<=0.7) continue;
             if (TrackInfo->pt[tk2idx]<=0.7) continue;
@@ -262,10 +274,10 @@ void Efficiency()
         double errxy = sqrt(bvtx_err.Perp2()+PV_err.Perp2());
         double lxy_significance = lxy/errxy;
         
-       // if (lxy_significance <=3.0) continue;
+        if (lxy_significance <=3.0) continue;
         
         double vtxprob = TMath::Prob(BInfo->vtxchi2[bidx],BInfo->vtxdof[bidx]);
-       // if (vtxprob<=0.1) continue;
+        if (vtxprob<=0.1) continue;
 
         //-----------------------------------------------------------------
         // Start to fill the B hadron information
@@ -283,11 +295,7 @@ void Efficiency()
     
     TH1D *h_bp_pt_eff = (TH1D*)h_bppt_recoLevel->Clone("h_bp_pt_eff");
     h_bp_pt_eff->Divide(h_bppt_genLevel);
-    for (int i=1; i<=h_bp_pt_eff->GetNbinsX(); i++) {
-        double p = h_bp_pt_eff->GetBinContent(i);
-        double N = h_bppt_genLevel->GetBinContent(i);
-        h_bp_pt_eff->SetBinError(i,sqrt(p*(1.-p)/N)); // binominal error
-    }
+    binomialError(h_bp_pt_eff, h_bppt_genLevel);
     
     h_bp_pt_eff->SetTitle("");
     h_bp_pt_eff->GetXaxis()->SetTitle("p_{T} [GeV]");
@@ -309,30 +317,17 @@ void Efficiency()
     
     TH1D *h_bp_y_eff = (TH1D*)h_bpy_recoLevel->Clone("h_bp_y_eff");
     h_bp_y_eff->Divide(h_bpy_genLevel);
-    for (int i=1; i<=h_bp_y_eff->GetNbinsX(); i++) {
-        double p = h_bp_y_eff->GetBinContent(i);
-        double N = h_bpy_genLevel->GetBinContent(i);
-        h_bp_y_eff->SetBinError(i,sqrt(p*(1.-p)/N)); // binominal error
-    }
+    binomialError(h_bp_y_eff, h_bpy_genLevel);
     
     TH1D *h_bppt_y_eff = (TH1D*)h_bpt_y_recolevel->Clone("h_bppt_y_eff");
     h_bppt_y_eff->Divide(h_bpt_y_genlevel);
-    for (int i=1; i<=h_bppt_y_eff->GetNbinsX(); i++) {
-        double p = h_bppt_y_eff->GetBinContent(i);
-        double N = h_bpy_genLevel->GetBinContent(i);
-        h_bppt_y_eff->SetBinError(i,sqrt(p*(1.-p)/N)); // binominal error
-    }
     
     //-------------------------------------------------------------
     // Taking the pre-filter into account in the official MC sample
     
     TH1D *h_bp_pt_effPrime = (TH1D*)h_bppt_recoLevel->Clone("h_bp_pt_effPrime");
     h_bp_pt_effPrime->Divide(h_bpfilter_pt);
-    for (int i=1; i<=h_bp_pt_effPrime->GetNbinsX(); i++) {
-        double p = h_bp_pt_effPrime->GetBinContent(i);
-        double N = h_bpfilter_pt->GetBinContent(i);
-        h_bp_pt_effPrime->SetBinError(i,sqrt(p*(1.-p)/N)); // binominal error
-    }
+    binomialError(h_bp_pt_effPrime, h_bpfilter_pt);
     
     fout->Write();
     fout->Close();
@@ -344,3 +339,5 @@ void Efficiency()
     delete TrackInfo;
     delete BInfo;
 }
+
+
