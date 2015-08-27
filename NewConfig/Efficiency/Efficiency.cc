@@ -95,7 +95,7 @@ void Efficiency()
     TrackInfo->setbranchadd(root);
     BInfo->setbranchadd(root);
     
-    TFile *fout = new TFile("efficiency_dRmatching_Lxycutsonly.root","recreate");
+    TFile *fout = new TFile("efficiency.root","recreate");
     
     TH1D* h_bppt_genLevel = new TH1D("h_bppt_genLevel","generator B+ p_{T}",40,10.,100.);
     TH1D* h_bpy_genLevel = new TH1D("h_bpy_genLevel","generator B+ rapidity",40,-2.4,2.4);
@@ -118,6 +118,7 @@ void Efficiency()
     TH1D* h_Bmass_gen = new TH1D("h_Bmass_gen", "Gen-level J/#psi K+ inavriant mass distribution", 100, 5.0, 6.0);
     TH1D* h_Bmass = new TH1D("h_Bmass", "J/#psi K+ inavriant mass distribution", 100, 5.0, 6.0);
     TH1D* h_dR = new TH1D("h_dR", "Opening angle", 100, 0., 1.0);
+    TH1D* h_ct = new TH1D("h_ct", "Life time distribution", 100, -0.1, 0.1);
     
     for (int evt=0; evt<n_entries; evt++) {
         if (evt%5000==0 || evt==n_entries-1) printf("processing %d/%d (%.2f%%).\n",evt,n_entries-1,(double)evt/(double)(n_entries-1)*100.);
@@ -311,7 +312,8 @@ void Efficiency()
             
             // ct calculations
             TVector3 v_l = bvtx-PV, v_lerr2;
-            double ct = v_l.XYvector()*v_p.XYvector()*default_bmass/v_p.Perp2();
+            TVector3 v_p = v4_b.Vect();
+            double ct = v_l.XYvector()*v_p.XYvector()*BP_MASS/v_p.Perp2();
             
             //-----------------------------------------------------------------
             TVector3 pvector_gen = (vect_gen)[ngen];
@@ -322,6 +324,7 @@ void Efficiency()
             h_cosang_sig->Fill(cosalpha2d);
             h_decaylengthSig->Fill(lxy_significance);
             h_vtxProb->Fill(vtxprob);
+            h_ct->Fill(ct);
             
            // if (cosalpha2d<=0.99) continue;
             if (lxy_significance <=3.0) continue;
