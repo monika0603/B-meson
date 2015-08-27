@@ -95,7 +95,7 @@ void Efficiency()
     TrackInfo->setbranchadd(root);
     BInfo->setbranchadd(root);
     
-    TFile *fout = new TFile("efficiency.root","recreate");
+    TFile *fout = new TFile("efficiency_dRmatching_Lxycutsonly.root","recreate");
     
     TH1D* h_bppt_genLevel = new TH1D("h_bppt_genLevel","generator B+ p_{T}",40,10.,100.);
     TH1D* h_bpy_genLevel = new TH1D("h_bpy_genLevel","generator B+ rapidity",40,-2.4,2.4);
@@ -115,6 +115,7 @@ void Efficiency()
     TH1D* h_vtxProb = new TH1D("h_vtxProb", "Vertex probability distribution", 100, 0., 1.);
     TH1D* h_decaylengthSig = new TH1D("h_decaylengthSig", "Decay length significance distribution", 100, 0., 10.);
     
+    TH1D* h_Bmass_gen = new TH1D("h_Bmass_gen", "Gen-level J/#psi K+ inavriant mass distribution", 100, 5.0, 6.0);
     TH1D* h_Bmass = new TH1D("h_Bmass", "J/#psi K+ inavriant mass distribution", 100, 5.0, 6.0);
     TH1D* h_dR = new TH1D("h_dR", "Opening angle", 100, 0., 1.0);
     
@@ -184,6 +185,8 @@ void Efficiency()
                 bool muon2Filter = fabs(GenInfo->eta[idx_mu2])<2.4 && GenInfo->pt[idx_mu2]>2.8;
                 
                 bool bRapFilter = fabs(v4_bp.Rapidity())<2.4;
+                
+                h_Bmass_gen->Fill(GenInfo->mass[idx_bp]);
                 
                 if (muon1Filter && muon2Filter && bRapFilter) {
                     h_bpfilter_pt->Fill(GenInfo->pt[idx_bp]);
@@ -265,8 +268,6 @@ void Efficiency()
             }
         }
         
-        h_cosang_sig->Fill(max_cosang);
-        
         if (vidx==-1) {
             printf("Error: no PV found. Run: %d, Event: %d.\n",EvtInfo->RunNo,EvtInfo->EvtNo);
             continue;
@@ -295,36 +296,37 @@ void Efficiency()
             tktkvtx_err.SetXYZ(BInfo->tktk_vtxXE[bidx],BInfo->tktk_vtxYE[bidx],BInfo->tktk_vtxZE[bidx]);
         }
         
-        //-----------------------------------------------------------------
-        // Other quality cuts for B+
-        double cosalpha2d = bmom.XYvector()*(bvtx-PV).XYvector()/(bmom.Perp()*(bvtx-PV).Perp());
-        if (cosalpha2d<=0.99) continue;
-        //cout<<bidx<<'\t'<<cosalpha2d<<'\t'<<max_cosang<<endl;
-      //  if (max_cosang<=0.99) continue;
-        
-        double lxy = (bvtx-PV).Perp();
-        double errxy = sqrt(bvtx_err.Perp2()+PV_err.Perp2());
-        double lxy_significance = lxy/errxy;
-        h_decaylengthSig->Fill(lxy_significance);
-        if (lxy_significance <=3.0) continue;
-        
-        double vtxprob = TMath::Prob(BInfo->vtxchi2[bidx],BInfo->vtxdof[bidx]);
-        h_vtxProb->Fill(vtxprob);
-        if (vtxprob<=0.1) continue;
-
-        //-----------------------------------------------------------------
         TVector3 v3_bReco;
         v3_bReco.SetPtEtaPhi(BInfo->pt[bidx],BInfo->eta[bidx],BInfo->phi[bidx]);
         // Start to fill the B hadron information
         for (int ngen=0; ngen<nMult_gen; ngen++)
         {
+            //-----------------------------------------------------------------
+            // Topologocal cuts for B+
+            double cosalpha2d = bmom.XYvector()*(bvtx-PV).XYvector()/(bmom.Perp()*(bvtx-PV).Perp());
+            double lxy = (bvtx-PV).Perp();
+            double errxy = sqrt(bvtx_err.Perp2()+PV_err.Perp2());
+            double lxy_significance = lxy/errxy;
+            double vtxprob = TMath::Prob(BInfo->vtxchi2[bidx],BInfo->vtxdof[bidx]);
+            
+            // ct calculations
+            TVector3 v_l = bvtx-PV, v_lerr2;
+            double ct = v_l.XYvector()*v_p.XYvector()*default_bmass/v_p.Perp2();
+            
+            //-----------------------------------------------------------------
             TVector3 pvector_gen = (vect_gen)[ngen];
-            double eta_gen = pvector_gen.Eta();
-            double phi_phi = pvector_gen.Phi();
-            double pt_gen = pvector_gen.Pt();
             
             double dR = pvector_gen.Angle(v3_bReco);
             if (dR > 0.011) continue;
+            
+            h_cosang_sig->Fill(cosalpha2d);
+            h_decaylengthSig->Fill(lxy_significance);
+            h_vtxProb->Fill(vtxprob);
+            
+           // if (cosalpha2d<=0.99) continue;
+            if (lxy_significance <=3.0) continue;
+           // if (vtxprob<=0.1) continue;
+            
             h_Bmass->Fill(BInfo->mass[bidx]);
             
             if (BInfo->mass[bidx] >=5.16 && BInfo->mass[bidx] <= 5.365 && fabs(v4_b.Rapidity())<2.4){
