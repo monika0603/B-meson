@@ -44,6 +44,29 @@ TH1D *binomialError(TH1D* num, TH1D* den)
     return num;
 }
 
+TH1D *dressing(TH1D* h)
+{
+    h->SetTitle("");
+    h->GetXaxis()->SetTitle("p_{T} [GeV]");
+    h->GetXaxis()->SetLabelFont(42);
+    h->GetXaxis()->SetLabelOffset(0.01);
+    h->GetXaxis()->SetTitleSize(0.06);
+    h->GetXaxis()->SetTitleOffset(1.09);
+    h->GetXaxis()->SetLabelFont(42);
+    h->GetXaxis()->SetLabelSize(0.055);
+    h->GetXaxis()->SetTitleFont(42);
+    h->GetYaxis()->SetTitle("Efficiency");
+    h->GetYaxis()->SetLabelFont(42);
+    h->GetYaxis()->SetLabelOffset(0.01);
+    h->GetYaxis()->SetTitleOffset(1.14);
+    h->GetYaxis()->SetTitleSize(0.06);
+    h->GetYaxis()->SetTitleFont(42);
+    h->GetYaxis()->SetLabelFont(42);
+    h->GetYaxis()->SetLabelSize(0.055);
+    
+    return h;
+}
+
 void Efficiency()
 {
     TChain *root = new TChain("demo/root");
@@ -89,6 +112,8 @@ void Efficiency()
     TH1D *h_bp_pt_effPrime_BE = new TH1D("h_bp_pt_effPrime_BE","Filter denominator",40,10.,100.);
     
     TH1D* h_cosang_sig = new TH1D("h_cosang_sig", "Signal cosine alpha", 100, 0., 1.);
+    TH1D* h_vtxProb = new TH1D("h_vtxProb", "Vertex probability distribution", 100, 0., 1.);
+    TH1D* h_decaylengthSig = new TH1D("h_decaylengthSig", "Decay length significance distribution", 100, 0., 10.);
     
     TH1D* h_Bmass = new TH1D("h_Bmass", "J/#psi K+ inavriant mass distribution", 100, 5.0, 6.0);
     TH1D* h_dR = new TH1D("h_dR", "Opening angle", 100, 0., 1.0);
@@ -96,10 +121,12 @@ void Efficiency()
     for (int evt=0; evt<n_entries; evt++) {
         if (evt%5000==0 || evt==n_entries-1) printf("processing %d/%d (%.2f%%).\n",evt,n_entries-1,(double)evt/(double)(n_entries-1)*100.);
         
-        if (evt > 200000) break;
+       // if (evt > 200000) break;
         
         root->GetEntry(evt);
         
+        // Vector of TVector3 for gen particle
+        vector<TVector3> vect_gen;
         // Look for indices of the whole decay tree
         //-----------------------------------------------------------------
         // Calculating dR
@@ -109,19 +136,22 @@ void Efficiency()
                 int idx_bp   = idx;
                 TVector3 v3_bGen;
                 v3_bGen.SetPtEtaPhi(GenInfo->pt[idx_bp],GenInfo->eta[idx_bp],GenInfo->phi[idx_bp]);
-    
+                vect_gen.push_back(v3_bGen);
+                
                 for (int bidx = 0; bidx < BInfo->size; bidx++) {
                     if (!(BInfo->type[bidx] == 1)) continue; //Only B+
                     TVector3 v3_bReco;
                     v3_bReco.SetPtEtaPhi(BInfo->pt[bidx],BInfo->eta[bidx],BInfo->phi[bidx]);
                     
-                    double dR = v3_bGen.Angle(v3_bReco);
-                    h_dR->Fill(dR);
+                    if (BInfo->mass[bidx] >=5.16 && BInfo->mass[bidx] <= 5.365){
+                        double dR = v3_bGen.Angle(v3_bReco);
+                        h_dR->Fill(dR);
+                    }
                 }
             }
         }
-        //-----------------------------------------------------------------
         
+        //-----------------------------------------------------------------
         for (int idx = 0; idx < GenInfo->size; idx++) {
             
             if (abs(GenInfo->pdgId[idx])==521) { // B+ find
@@ -169,6 +199,7 @@ void Efficiency()
             }
         }
     
+        int nMult_gen = (int)vect_gen.size();
     // Start of BInfo loop
     for (int bidx = 0; bidx < BInfo->size; bidx++) {
        
@@ -221,6 +252,7 @@ void Efficiency()
         TVector3 bvtx(BInfo->vtxX[bidx],BInfo->vtxY[bidx],BInfo->vtxZ[bidx]);
         TVector3 bvtx_err(BInfo->vtxXE[bidx],BInfo->vtxYE[bidx],BInfo->vtxZE[bidx]);
         TVector3 bmom(BInfo->px[bidx],BInfo->py[bidx],BInfo->pz[bidx]);
+        
         int vidx = -1;
         double max_cosang = -1.;
         for (int idx = 0; idx < VtxInfo->Size; idx++) {
@@ -273,47 +305,40 @@ void Efficiency()
         double lxy = (bvtx-PV).Perp();
         double errxy = sqrt(bvtx_err.Perp2()+PV_err.Perp2());
         double lxy_significance = lxy/errxy;
-        
+        h_decaylengthSig->Fill(lxy_significance);
         if (lxy_significance <=3.0) continue;
         
         double vtxprob = TMath::Prob(BInfo->vtxchi2[bidx],BInfo->vtxdof[bidx]);
+        h_vtxProb->Fill(vtxprob);
         if (vtxprob<=0.1) continue;
 
         //-----------------------------------------------------------------
+        TVector3 v3_bReco;
+        v3_bReco.SetPtEtaPhi(BInfo->pt[bidx],BInfo->eta[bidx],BInfo->phi[bidx]);
         // Start to fill the B hadron information
-        h_Bmass->Fill(BInfo->mass[bidx]);
-        
-        if (BInfo->mass[bidx] >=5.16 && BInfo->mass[bidx] <= 5.365 && fabs(v4_b.Rapidity())<2.4){
-            h_bppt_recoLevel->Fill(BInfo->pt[bidx]);
-            h_bpy_recoLevel->Fill(v4_b.Rapidity());
-            h_bpt_y_recolevel->Fill(v4_b.Rapidity(), BInfo->pt[bidx]);
-        }
-
-    }// End of BInfo loop
-        
+        for (int ngen=0; ngen<nMult_gen; ngen++)
+        {
+            TVector3 pvector_gen = (vect_gen)[ngen];
+            double eta_gen = pvector_gen.Eta();
+            double phi_phi = pvector_gen.Phi();
+            double pt_gen = pvector_gen.Pt();
+            
+            double dR = pvector_gen.Angle(v3_bReco);
+            if (dR > 0.011) continue;
+            h_Bmass->Fill(BInfo->mass[bidx]);
+            
+            if (BInfo->mass[bidx] >=5.16 && BInfo->mass[bidx] <= 5.365 && fabs(v4_b.Rapidity())<2.4){
+                h_bppt_recoLevel->Fill(BInfo->pt[bidx]);
+                h_bpy_recoLevel->Fill(v4_b.Rapidity());
+                h_bpt_y_recolevel->Fill(v4_b.Rapidity(), BInfo->pt[bidx]);
+                }
+            }
+        }// End of BInfo loop
    } // end of evt loop
     
     TH1D *h_bp_pt_eff = (TH1D*)h_bppt_recoLevel->Clone("h_bp_pt_eff");
     h_bp_pt_eff->Divide(h_bppt_genLevel);
     binomialError(h_bp_pt_eff, h_bppt_genLevel);
-    
-    h_bp_pt_eff->SetTitle("");
-    h_bp_pt_eff->GetXaxis()->SetTitle("p_{T} [GeV]");
-    h_bp_pt_eff->GetXaxis()->SetLabelFont(42);
-    h_bp_pt_eff->GetXaxis()->SetLabelOffset(0.01);
-    h_bp_pt_eff->GetXaxis()->SetTitleSize(0.06);
-    h_bp_pt_eff->GetXaxis()->SetTitleOffset(1.09);
-    h_bp_pt_eff->GetXaxis()->SetLabelFont(42);
-    h_bp_pt_eff->GetXaxis()->SetLabelSize(0.055);
-    h_bp_pt_eff->GetXaxis()->SetTitleFont(42);
-    h_bp_pt_eff->GetYaxis()->SetTitle("Efficiency");
-    h_bp_pt_eff->GetYaxis()->SetLabelFont(42);
-    h_bp_pt_eff->GetYaxis()->SetLabelOffset(0.01);
-    h_bp_pt_eff->GetYaxis()->SetTitleOffset(1.14);
-    h_bp_pt_eff->GetYaxis()->SetTitleSize(0.06);
-    h_bp_pt_eff->GetYaxis()->SetTitleFont(42);
-    h_bp_pt_eff->GetYaxis()->SetLabelFont(42);
-    h_bp_pt_eff->GetYaxis()->SetLabelSize(0.055);
     
     TH1D *h_bp_y_eff = (TH1D*)h_bpy_recoLevel->Clone("h_bp_y_eff");
     h_bp_y_eff->Divide(h_bpy_genLevel);
@@ -328,6 +353,7 @@ void Efficiency()
     TH1D *h_bp_pt_effPrime = (TH1D*)h_bppt_recoLevel->Clone("h_bp_pt_effPrime");
     h_bp_pt_effPrime->Divide(h_bpfilter_pt);
     binomialError(h_bp_pt_effPrime, h_bpfilter_pt);
+    dressing(h_bp_pt_effPrime);
     
     fout->Write();
     fout->Close();
