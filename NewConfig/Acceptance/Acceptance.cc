@@ -156,6 +156,7 @@ void Acceptance()
         double p = h_bp_pt_acc->GetBinContent(i);
         double N = h_bp_pt_norm->GetBinContent(i);
         h_bp_pt_acc->SetBinError(i,sqrt(p*(1.-p)/N)); // binominal error
+        if((sqrt(p*(1.-p)/N)) == 0) cout<<i<<'\t'<<p<<'\t'<<N<<'\t'<<sqrt(p*(1.-p)/N)<<endl;
     }
     
   //  TCanvas *c1 = canvasDressing("c1");
@@ -241,6 +242,11 @@ void Acceptance()
     TH1D *h_bp_y_corr = (TH1D*)h_bpfilter_y->Clone("h_bp_y_corr");
     h_bp_y_corr->Divide(h_bp_y);
     h_bp_y_corr->Sumw2();
+    
+    // Acceptance factors to match official MC sample //
+    TH1D *h_bp_pt_AccPrime = (TH1D*)h_bpfilter_pt->Clone("h_bp_pt_AccPrime");
+    h_bp_pt_AccPrime->Divide(h_bp_pt_norm);
+    h_bp_pt_AccPrime->Sumw2();
     
     fout->Write();
     fout->Close();
