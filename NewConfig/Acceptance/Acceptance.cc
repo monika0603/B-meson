@@ -155,8 +155,8 @@ void Acceptance()
     for (int i=1; i<=h_bp_pt_acc->GetNbinsX(); i++) {
         double p = h_bp_pt_acc->GetBinContent(i);
         double N = h_bp_pt_norm->GetBinContent(i);
-        h_bp_pt_acc->SetBinError(i,sqrt(p*(1.-p)/N)); // binominal error
-        if((sqrt(p*(1.-p)/N)) == 0) cout<<i<<'\t'<<p<<'\t'<<N<<'\t'<<sqrt(p*(1.-p)/N)<<endl;
+        h_bp_pt_acc->SetBinError(i,sqrt(p*(1.-p/N))/N); // binominal error
+        if((sqrt(p*(1.-p/N))/N) == 0) cout<<i<<'\t'<<p<<'\t'<<N<<'\t'<<sqrt(p*(1.-p)/N)<<endl;
     }
     
   //  TCanvas *c1 = canvasDressing("c1");
