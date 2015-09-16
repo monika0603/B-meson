@@ -287,7 +287,7 @@ void correctedYield(int channel = 1, int beamSpotErrEstimate = 1)
     double etaWid = etaMax - etaMin;
     double nEvents = 739847.;
     double BR = (1.027e-03) * (5.961e-02);
-    double Lint = 47e06; //47 (pb)-1
+    double Lint = 47; //47 (pb)-1
     
     bPtHist->Sumw2();
    // bPtHist->Scale(1/nEvents);
@@ -314,7 +314,7 @@ void correctedYield(int channel = 1, int beamSpotErrEstimate = 1)
     bPtHist->GetXaxis()->SetLabelFont(42);
     bPtHist->GetXaxis()->SetLabelSize(0.055);
     bPtHist->GetXaxis()->SetTitleFont(42);
-    bPtHist->GetYaxis()->SetTitle("d#sigma/dp_{T} (pp #rightarrow B^{+}X; |y|<2.4) [#mub/GeV]");
+    bPtHist->GetYaxis()->SetTitle("d#sigma/dp_{T} (pp #rightarrow B^{+}X; |y|<2.4) [pb/GeV]");
     bPtHist->GetYaxis()->SetLabelFont(42);
     bPtHist->GetYaxis()->SetLabelOffset(0.01);
     bPtHist->GetYaxis()->SetTitleOffset(1.14);
@@ -326,8 +326,8 @@ void correctedYield(int channel = 1, int beamSpotErrEstimate = 1)
     bPtHist->SetMarkerColor(kBlack);
     bPtHist->SetLineColor(kRed-7);
     bPtHist->SetLineWidth(4);
-   // bPtHist->SetMinimum(1);
-    bPtHist->SetMaximum(5.0);
+    bPtHist->SetMinimum(1);
+  //  bPtHist->SetMaximum(5.0);
     bPtHist->Draw();
     
     bPtHist_7TeV->SetMarkerStyle(21);
