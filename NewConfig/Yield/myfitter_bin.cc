@@ -35,7 +35,7 @@ using namespace RooFit;
 
 #define SOURCE              "myloop_reference.root"
 
-void eval_yield(double pt_min = 10., double pt_max = 100., double *res = NULL)
+void eval_yield(double pt_min = 10., double pt_max = 100., double *res = NULL, int bkg_choice = 1)
 {
     double mass_min = 5.18, mass_max = 6.0;
     double mass_peak = BP_MASS;
@@ -93,35 +93,42 @@ void eval_yield(double pt_min = 10., double pt_max = 100., double *res = NULL)
     
     RooAddPdf pdf_m_signal("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2),RooArgList(m_fraction));
     
+    RooRealVar n_signal("n_signal","n_signal",n_signal_initial,0.,data->sumEntries()*2.);
+    RooRealVar n_combinatorial("n_combinatorial","n_combinatorial",n_combinatorial_initial,0.,data->sumEntries());
+    
+    RooAddPdf *model = 0;
+    
+    //-----------------------------------------------------------------
+    // combinatorial background PDF (Polynomial)
+
+    RooRealVar m1_poly("m1_poly", "coeficient of mass term", 0, -10, 10);
+    RooRealVar m2_poly("m2_poly", "coeficient of mass^2 term", 0, -10, 10);
+    RooRealVar m3_poly("m3_poly", "coeficient of mass^3 term", 0, -10, 10);
+    
+    // f(x) = 1+c_1x+c_2x^2
+    RooPolynomial pdf_m_combinatorial_poly("pdf_m_combinatorial_poly", "cubic polynomial", mass, RooArgList(m1_poly) );
+    
     //-----------------------------------------------------------------
     // combinatorial background PDF (exponential)
     
     RooRealVar m_exp("m_exp","m_exp",-0.3,-10.,+10.);
     RooExponential pdf_m_combinatorial_exp("pdf_m_combinatorial_exp","pdf_m_combinatorial_exp",mass,m_exp);
-    
-    //-----------------------------------------------------------------
-    // combinatorial background PDF (Polynomial)
-    
-    RooRealVar m1_poly("m1_poly", "coeficient of mass term", 0, -10, 10);
-    RooRealVar m2_poly("m2_poly", "coeficient of mass^2 term", 0, -10, 10);
-  //  RooRealVar m3_poly("m3_poly", "coeficient of mass^3 term", 0, -10, 10);
-    
-    // f(x) = 1+c_1x+c_2x^2
-    RooPolynomial pdf_m_combinatorial_poly("pdf_m_combinatorial_poly", "cubic polynomial", mass, RooArgList
-                                           (m1_poly) );
-    
-    //-----------------------------------------------------------------
-    // full model
-    
-    RooRealVar n_signal("n_signal","n_signal",n_signal_initial,0.,data->sumEntries()*2.);
-    RooRealVar n_combinatorial("n_combinatorial","n_combinatorial",n_combinatorial_initial,0.,data->sumEntries());
-    
-    //RooAddPdf *model = new RooAddPdf("model","model",
-                                     //RooArgList(pdf_m_signal, pdf_m_combinatorial_exp),
-                                     //RooArgList(n_signal, n_combinatorial));
-    RooAddPdf *model = new RooAddPdf("model","model",
-                                     RooArgList(pdf_m_signal, pdf_m_combinatorial_poly),
-                                     RooArgList(n_signal, n_combinatorial));
+
+    // Full model
+    switch (bkg_choice){
+        
+        case 1:
+            model = new RooAddPdf("model","model",
+                                             RooArgList(pdf_m_signal, pdf_m_combinatorial_poly),
+                                             RooArgList(n_signal, n_combinatorial));
+            break;
+            
+        default:
+            model = new RooAddPdf("model","model",
+                                  RooArgList(pdf_m_signal, pdf_m_combinatorial_exp),
+                                  RooArgList(n_signal, n_combinatorial));
+            break;
+    }
     
     model->fitTo(*data,Minos(DO_MINOS),NumCPU(NUMBER_OF_CPU),Offset(kTRUE));
     
@@ -194,7 +201,9 @@ void myfitter_bin()
     double ey[9] = {0., 0., 0., 0., 0., 0., 0., 0., 0.};
     
     TH1D *h_dummy = new TH1D("h_dummy", "Dummy histo", ptBinsSize, &ptBins[0]);
-    TH1D *h_bp_yields = new TH1D("h_bp_yields", "B-meson p_{T} distribution", ptBinsSize, &ptBins[0]);
+    TH1D *h_bp_yields_expBkg = new TH1D("h_bp_yields_expBkg", "B-meson p_{T} distribution", ptBinsSize, &ptBins[0]);
+    
+    TH1D *h_bp_yields_polyBkg = new TH1D("h_bp_yields_polyBkg", "B-meson p_{T} distribution", ptBinsSize, &ptBins[0]);
     
     TString yaxis_title = "d#sigma/dp_{T} (pp #rightarrow B^{+}X; |y|<2.4) [pb/GeV]";
     
@@ -224,23 +233,31 @@ void myfitter_bin()
     double Lint = 47; //47 (pb)-1
     double FF = 0.402;
     
-    for (int i=1; i<=h_bp_yields->GetNbinsX(); i++) {
+    for (int i=1; i<=h_bp_yields_expBkg->GetNbinsX(); i++) {
         eval_yield(ptBins[i-1],ptBins[i],res);
         
-        double binWid = h_bp_yields->GetBinWidth(i);
+        double binWid = h_bp_yields_expBkg->GetBinWidth(i);
+        double accEff = h_ptEffAcc->GetBinContent(i);
+    
+        h_bp_yields_expBkg->SetBinContent(i,res[0]/binWid/BR/accEff/Lint/2.0/FF);
+        h_bp_yields_expBkg->SetBinError(i,res[1]/binWid/BR/accEff/Lint/2.0/FF);
+        
+        ey[i-1] = sqrt( h_bp_yields_expBkg->GetBinError(i)/h_bp_yields_expBkg->GetBinContent(i) + FONLL_13TeVE[i-1]/FONLL_13TeV[i-1]);
+        y[i-1] = h_bp_yields_expBkg->GetBinContent(i)/FONLL_13TeV[i-1];
+    }
+    
+    for (int i=1; i<=h_bp_yields_polyBkg->GetNbinsX(); i++) {
+        eval_yield(ptBins[i-1],ptBins[i],res, 1);
+        
+        double binWid = h_bp_yields_polyBkg->GetBinWidth(i);
         double accEff = h_ptEffAcc->GetBinContent(i);
         
-      //  h_bp_yields->SetBinContent(i+1,res[0]/binWid);
-      //  h_bp_yields->SetBinError(i+1,res[1]/binWid);
-        h_bp_yields->SetBinContent(i,res[0]/binWid/BR/accEff/Lint/2.0/FF);
-        h_bp_yields->SetBinError(i,res[1]/binWid/BR/accEff/Lint/2.0/FF);
-        
-        ey[i-1] = sqrt( h_bp_yields->GetBinError(i)/h_bp_yields->GetBinContent(i) + FONLL_13TeVE[i-1]/FONLL_13TeV[i-1]);
-        y[i-1] = h_bp_yields->GetBinContent(i)/FONLL_13TeV[i-1];
+        h_bp_yields_polyBkg->SetBinContent(i,res[0]/binWid/BR/accEff/Lint/2.0/FF);
+        h_bp_yields_polyBkg->SetBinError(i,res[1]/binWid/BR/accEff/Lint/2.0/FF);
     }
     
     TFile *fout = new TFile("myfitter_bin.root","recreate");
-    h_bp_yields->Write();
+    h_bp_yields_expBkg->Write();
     fout->Close();
     
 #if yieldDISPLAY
@@ -323,15 +340,15 @@ void myfitter_bin()
     hFONLL_13TeV->SetMarkerColor(kBlack);
     hFONLL_13TeV->Draw("p same");
     
-    h_bp_yields->SetMarkerStyle(20);
-    h_bp_yields->SetMarkerColor(kBlack);
-    h_bp_yields->SetLineColor(kRed-7);
-    h_bp_yields->SetLineWidth(4);
-    h_bp_yields->Draw("same");
+    h_bp_yields_expBkg->SetMarkerStyle(20);
+    h_bp_yields_expBkg->SetMarkerColor(kBlack);
+    h_bp_yields_expBkg->SetLineColor(kRed-7);
+    h_bp_yields_expBkg->SetLineWidth(4);
+    h_bp_yields_expBkg->Draw("same");
     
     cout<<"---- Corrected yield ----- "<<endl;
-    for (int i=1; i<=h_bp_yields->GetNbinsX(); i++)
-        cout<<ptBins[i-1]<<" < pT < "<<ptBins[i]<<'\t'<<h_bp_yields->GetBinContent(i)<<'\t'<<h_ptEffAcc->GetBinContent(i)<<endl;
+    for (int i=1; i<=h_bp_yields_expBkg->GetNbinsX(); i++)
+        cout<<ptBins[i-1]<<" < pT < "<<ptBins[i]<<'\t'<<h_bp_yields_expBkg->GetBinContent(i)<<'\t'<<h_ptEffAcc->GetBinContent(i)<<'\t'<<h_bp_yields_polyBkg->GetBinContent(i)<<endl;
     cout<<"-------------------------- "<<endl;
     
     /*c2->cd();
