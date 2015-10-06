@@ -123,7 +123,7 @@ void eval_yield(double pt_min = 10., double pt_max = 100., double *res = NULL, i
                                              RooArgList(n_signal, n_combinatorial));
             break;
             
-        default:
+        case 2:
             model = new RooAddPdf("model","model",
                                   RooArgList(pdf_m_signal, pdf_m_combinatorial_exp),
                                   RooArgList(n_signal, n_combinatorial));
@@ -234,7 +234,7 @@ void myfitter_bin()
     double FF = 0.402;
     
     for (int i=1; i<=h_bp_yields_expBkg->GetNbinsX(); i++) {
-        eval_yield(ptBins[i-1],ptBins[i],res);
+        eval_yield(ptBins[i-1],ptBins[i],res, 2);
         
         double binWid = h_bp_yields_expBkg->GetBinWidth(i);
         double accEff = h_ptEffAcc->GetBinContent(i);
