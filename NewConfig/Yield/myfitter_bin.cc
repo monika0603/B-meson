@@ -99,14 +99,15 @@ void eval_yield(double pt_min = 10., double pt_max = 100., double *res = NULL, i
     RooAddPdf *model = 0;
     
     //-----------------------------------------------------------------
-    // combinatorial background PDF (Polynomial)
+    // combinatorial background PDF (Bernstein Polynomial)
 
-    RooRealVar m1_poly("m1_poly", "coeficient of mass term", 0, -10, 10);
-    RooRealVar m2_poly("m2_poly", "coeficient of mass^2 term", 0, -10, 10);
-    RooRealVar m3_poly("m3_poly", "coeficient of mass^3 term", 0, -10, 10);
+    RooRealVar m1_poly("m1_poly", "coeficient of mass term", 0.5, 0., 10.);
+    RooRealVar m2_poly("m2_poly", "coeficient of mass^2 term", 0.5, 0., 10.);
+    RooRealVar m3_poly("m3_poly", "coeficient of mass^3 term", 0.5, 0., 10.);
     
     // f(x) = 1+c_1x+c_2x^2
-    RooPolynomial pdf_m_combinatorial_poly("pdf_m_combinatorial_poly", "cubic polynomial", mass, RooArgList(m1_poly) );
+  //  RooPolynomial pdf_m_combinatorial_poly("pdf_m_combinatorial_poly", "cubic polynomial", mass, RooArgList(m1_poly) );
+    RooBernstein pdf_m_combinatorial_bern("pdf_m_combinatorial_bern", "Bernstein polynomial", mass, RooArgList(RooConst(1.),m1_poly, m2_poly) );
     
     //-----------------------------------------------------------------
     // combinatorial background PDF (exponential)
@@ -119,7 +120,7 @@ void eval_yield(double pt_min = 10., double pt_max = 100., double *res = NULL, i
         
         case 1:
             model = new RooAddPdf("model","model",
-                                             RooArgList(pdf_m_signal, pdf_m_combinatorial_poly),
+                                             RooArgList(pdf_m_signal, pdf_m_combinatorial_bern),
                                              RooArgList(n_signal, n_combinatorial));
             break;
             
@@ -347,8 +348,13 @@ void myfitter_bin()
     h_bp_yields_expBkg->Draw("same");
     
     cout<<"---- Corrected yield ----- "<<endl;
-    for (int i=1; i<=h_bp_yields_expBkg->GetNbinsX(); i++)
-        cout<<ptBins[i-1]<<" < pT < "<<ptBins[i]<<'\t'<<h_bp_yields_expBkg->GetBinContent(i)<<'\t'<<h_ptEffAcc->GetBinContent(i)<<'\t'<<h_bp_yields_polyBkg->GetBinContent(i)<<endl;
+    for (int i=1; i<=h_bp_yields_expBkg->GetNbinsX(); i++){
+        double exp_fit = h_bp_yields_expBkg->GetBinContent(i);
+        double poly_fit = h_bp_yields_polyBkg->GetBinContent(i);
+        double fractional_change = ((poly_fit - exp_fit)/exp_fit)*100.0;
+        
+        cout<<ptBins[i-1]<<" < pT < "<<ptBins[i]<<'\t'<<h_bp_yields_expBkg->GetBinContent(i)<<'\t'<<h_ptEffAcc->GetBinContent(i)<<'\t'<<h_bp_yields_polyBkg->GetBinContent(i)<<'\t'<<fractional_change<<endl;
+    }
     cout<<"-------------------------- "<<endl;
     
     /*c2->cd();
