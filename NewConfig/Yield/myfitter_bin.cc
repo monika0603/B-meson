@@ -81,6 +81,7 @@ void eval_yield(double pt_min = 10., double pt_max = 100., double *res = NULL, i
     RooRealVar m_mean("m_mean","m_mean",mass_peak,mass_min,mass_max);
     RooRealVar m_sigma1("m_sigma1","m_sigma1",0.015,0.001,0.050);
     RooRealVar m_sigma2("m_sigma2","m_sigma2",0.030,0.001,0.100);
+    RooRealVar m_sigma3("m_sigma3","m_sigma3",0.045,0.001,0.200);
     RooRealVar m_fraction("m_fraction","m_fraction",0.5);
     
     if (pt_min>=60.) {
@@ -90,8 +91,9 @@ void eval_yield(double pt_min = 10., double pt_max = 100., double *res = NULL, i
     
     RooGaussian m_gaussian1("m_gaussian1","m_gaussian1",mass,m_mean,m_sigma1);
     RooGaussian m_gaussian2("m_gaussian2","m_gaussian2",mass,m_mean,m_sigma2);
+    RooGaussian m_gaussian3("m_gaussian3","m_gaussian3",mass,m_mean,m_sigma3);
     
-    RooAddPdf pdf_m_signal("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2),RooArgList(m_fraction));
+    RooAddPdf pdf_m_signal("pdf_m_signal","pdf_m_signal",RooArgList(m_gaussian1,m_gaussian2,m_gaussian2),RooArgList(m_fraction));
     
     RooRealVar n_signal("n_signal","n_signal",n_signal_initial,0.,data->sumEntries()*2.);
     RooRealVar n_combinatorial("n_combinatorial","n_combinatorial",n_combinatorial_initial,0.,data->sumEntries());
